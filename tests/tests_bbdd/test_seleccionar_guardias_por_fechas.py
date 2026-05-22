@@ -1,7 +1,7 @@
 import unittest
 from datetime import date, timedelta
 
-from claves.conexion_bbdd import CONEXION
+from claves.conexion_bbdd import conexion
 from lib.guardia import Guardia
 from recursos_externos.bbdd.base_datos import BaseDatos
 
@@ -9,8 +9,8 @@ from recursos_externos.bbdd.base_datos import BaseDatos
 class TestSeleccionarGuardiasPorFechas(unittest.TestCase):
 
     def test_seleccionar_guardias_por_fechas_no_results(self):
-        CONEXION.autocommit = False
-        cursor = CONEXION.cursor()
+        conexion.autocommit = False
+        cursor = conexion.cursor()
         cursor.execute("DELETE FROM guardias")
 
         fecha_inicio = date.today() + timedelta(days=5)
@@ -22,11 +22,11 @@ class TestSeleccionarGuardiasPorFechas(unittest.TestCase):
         self.assertEqual(len(result), 0)
 
         cursor.close()
-        CONEXION.rollback()
+        conexion.rollback()
 
     def test_seleccionar_guardias_por_fechas_with_results(self):
-        CONEXION.autocommit = False
-        cursor = CONEXION.cursor()
+        conexion.autocommit = False
+        cursor = conexion.cursor()
         cursor.execute('DELETE FROM GUARDIAS')
         cursor.execute(
             'INSERT INTO guardias VALUES '
@@ -45,11 +45,11 @@ class TestSeleccionarGuardiasPorFechas(unittest.TestCase):
         self.assertTrue(isinstance(result[1], Guardia))
 
         cursor.close()
-        CONEXION.rollback()
+        conexion.rollback()
 
     def test_seleccionar_guardias_por_fechas_single_result(self):
-        CONEXION.autocommit = False
-        cursor = CONEXION.cursor()
+        conexion.autocommit = False
+        cursor = conexion.cursor()
         cursor.execute('DELETE FROM GUARDIAS')
         cursor.execute(
             'INSERT INTO guardias VALUES '
@@ -65,6 +65,6 @@ class TestSeleccionarGuardiasPorFechas(unittest.TestCase):
         self.assertTrue(isinstance(result[0], Guardia))
 
         cursor.close()
-        CONEXION.rollback()
+        conexion.rollback()
 
-        CONEXION.autocommit = True
+        conexion.autocommit = True

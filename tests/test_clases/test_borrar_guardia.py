@@ -1,14 +1,14 @@
 import unittest
 from datetime import date
 
-from claves.conexion_bbdd import CONEXION
+from claves.conexion_bbdd import conexion
 from lib.guardia import Guardia
 from lib.hora import Hora
 from lib.profesor import Profesor
 
 
 class TestBorrarGuardia(unittest.TestCase):
-    conexion = CONEXION
+    conexion = conexion
     cursor = conexion.cursor()
 
     def test_borrar_guardia_correcto(self):

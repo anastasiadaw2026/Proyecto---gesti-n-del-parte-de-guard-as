@@ -1,12 +1,12 @@
 import unittest
-from claves.conexion_bbdd import CONEXION
+from claves.conexion_bbdd import conexion
 from recursos_externos.bbdd.base_datos import BaseDatos
 
 
 class TestVaciarBBDD(unittest.TestCase):
     def test_vaciar_bbdd(self):
-        cursor = CONEXION.cursor()
-        CONEXION.autocommit = False
+        cursor = conexion.cursor()
+        conexion.autocommit = False
 
 
         cursor.execute("INSERT INTO AULAS VALUES ('AULA_TEST')")
@@ -42,8 +42,8 @@ class TestVaciarBBDD(unittest.TestCase):
         self.assertEqual(cursor.fetchone()[0], 0)
 
 
-        CONEXION.rollback()
-        CONEXION.autocommit = True
+        conexion.rollback()
+        conexion.autocommit = True
 
 
 if __name__ == "__main__":

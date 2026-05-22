@@ -1,11 +1,11 @@
 import unittest
-from claves.conexion_bbdd import CONEXION
+from claves.conexion_bbdd import conexion
 from recursos_externos.bbdd.base_datos import BaseDatos
 
 
 class TestSacarAulas(unittest.TestCase):
     def test_sacar_aulas(self):
-        conexion = CONEXION
+        conexion = conexion
         conexion.autocommit = False
 
         try:

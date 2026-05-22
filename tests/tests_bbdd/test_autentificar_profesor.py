@@ -1,12 +1,12 @@
 import unittest
 import bcrypt
-from claves.conexion_bbdd import CONEXION
+from claves.conexion_bbdd import conexion
 from recursos_externos.bbdd.base_datos import BaseDatos
 
 
 class TestAutentificarProfesor(unittest.TestCase):
     def test_autentificar_profesor_exitoso(self):
-        conexion = CONEXION
+        conexion = conexion
         conexion.autocommit = False
 
         try:
@@ -25,7 +25,7 @@ class TestAutentificarProfesor(unittest.TestCase):
             conexion.autocommit = True
 
     def test_autentificar_profesor_clave_incorrecta(self):
-        conexion = CONEXION
+        conexion = conexion
         conexion.autocommit = False
 
         try:
@@ -45,7 +45,7 @@ class TestAutentificarProfesor(unittest.TestCase):
             conexion.autocommit = True
 
     def test_autentificar_profesor_id_incorrecto(self):
-        conexion = CONEXION
+        conexion = conexion
         conexion.autocommit = False
 
         try:

@@ -1,14 +1,14 @@
 import unittest
 from datetime import date
 
-from claves.conexion_bbdd import CONEXION
+from claves.conexion_bbdd import conexion
 from lib.guardia import Guardia
 from lib.hora import Hora
 from lib.profesor import Profesor
 
 
 class TestInsertarGuardia(unittest.TestCase):
-    conexion = CONEXION
+    conexion = conexion
     cursor = conexion.cursor()
     guardia = Guardia()
     guardia.id = Profesor('Nombre 1', 'Apellido_1a Apellido_1b')

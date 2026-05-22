@@ -3,7 +3,7 @@ import subprocess
 
 import bcrypt
 
-from claves.conexion_bbdd import CONEXION, CONTRASENIA
+from claves.conexion_bbdd import conexion, CONTRASENIA
 from lib.aula import Aula
 from lib.curso import Curso
 from lib.guardia import Guardia
@@ -26,17 +26,18 @@ class BaseDatos:
                     stderr=subprocess.PIPE, text=True)
             if proceso.returncode == 0:
                 return True, archivo_backup
-            return False, proceso.stderr
-        except Exception as error:
-            return False, str(error)
+            return False, 'No se pudo realizar la copia de seguridad.'
+        except:
+            return False, 'No se pudo realizar la copia de seguridad.'
 
     # todo: cuando acabare de hacer los test tengo que crear el truncate
     #  guardias también
     @staticmethod
     def vaciar_bbdd():
+        conexion.autocommit = False
         cursor = None
         try:
-            cursor = CONEXION.cursor()
+            cursor = conexion.cursor()
             vaciar = ['SET FOREIGN_KEY_CHECKS = 0',
                       'DELETE FROM AULAS',
                       'DELETE FROM PROFESORES',
@@ -46,12 +47,15 @@ class BaseDatos:
                       'SET FOREIGN_KEY_CHECKS = 1']
             for truncate in vaciar:
                 cursor.execute(truncate)
-            return ''
-        except Exception as e:
-            return e
+            conexion.commit()
+            return True
+        except:
+            conexion.rollback()
+            return False
         finally:
             if cursor:
                 cursor.close()
+            conexion.autocommit = True
 
 
     @staticmethod
@@ -62,7 +66,7 @@ class BaseDatos:
         profesores = []
         cursor = None
         try:
-            cursor = CONEXION.cursor()
+            cursor = conexion.cursor()
             with open('../recursos_externos/ficheros/cursos.csv', mode='r',
                       encoding='utf-8-sig') as f:
                 for linea in f.readlines():
@@ -98,7 +102,7 @@ class BaseDatos:
     def guardar_claves_profesores():
         try:
             profesores = BaseDatos.recoger_info_ficheros()[3]
-            with open('../../claves/claves_profesores.txt', 'w', encoding =
+            with open('../claves/claves_profesores.txt', 'w', encoding =
                         'utf-8') as fclaves:
                 for profesor in profesores:
                     fclaves.write(profesor.id + ' - ' + profesor.clave + '\n')
@@ -115,7 +119,7 @@ class BaseDatos:
         cursor = None
         try:
             if BaseDatos.recoger_info_ficheros():
-                cursor = CONEXION.cursor()
+                cursor = conexion.cursor()
                 cursos, aulas, horas, profesores = (
                     BaseDatos.recoger_info_ficheros())
                 for curso in cursos:
@@ -134,11 +138,11 @@ class BaseDatos:
                         f"'{profesor.nombre}','{profesor.apellidos}',"
                         f"'{profesor.clave_encriptada}')")
                     cursor.execute(aniadir_profesor)
-                return ''
+                return True
             else:
-                return 'No se recogió ningún dato de los ficheros'
-        except Exception as e:
-            return e
+                return False
+        except:
+            return False
         finally:
             if cursor:
                 cursor.close()
@@ -148,7 +152,7 @@ class BaseDatos:
     def sacar_profesores():
         cursor = None
         try:
-            cursor = CONEXION.cursor()
+            cursor = conexion.cursor()
             profesores = []
             selecioonar_profe = ('select nombre, apellidos from profesores '
                                  'order by nombre, apellidos')
@@ -156,8 +160,8 @@ class BaseDatos:
             for profesor in cursor:
                 profesores.append(Profesor(profesor[0], profesor[1]))
             return profesores
-        except Exception as e:
-            return e
+        except:
+            return False
         finally:
             if cursor:
                 cursor.close()
@@ -166,7 +170,7 @@ class BaseDatos:
     def sacar_horas():
         cursor = None
         try:
-            cursor = CONEXION.cursor()
+            cursor = conexion.cursor()
             horas = []
             seleccionar_horas = ('select nombre from horas '
                                  'order by length(nombre)')
@@ -176,8 +180,8 @@ class BaseDatos:
                 hora.nombre = nombre[0]
                 horas.append(hora)
             return horas
-        except Exception as e:
-            return e
+        except:
+            return False
         finally:
             if cursor:
                 cursor.close()
@@ -186,7 +190,7 @@ class BaseDatos:
     def sacar_cursos():
         cursor = None
         try:
-            cursor = CONEXION.cursor()
+            cursor = conexion.cursor()
             cursos = []
             seleccionar_cursos = ('select nombre from cursos '
                                   'order by nombre')
@@ -196,8 +200,8 @@ class BaseDatos:
                 curso.nombre = nombre[0].strip()
                 cursos.append(curso)
             return cursos
-        except Exception as e:
-            return e
+        except:
+            return False
         finally:
             if cursor:
                 cursor.close()
@@ -206,7 +210,7 @@ class BaseDatos:
     def sacar_aulas():
         cursor = None
         try:
-            cursor = CONEXION.cursor()
+            cursor = conexion.cursor()
             aulas = []
             seleccionar_aulas = ('select nombre from aulas '
                                  'order by nombre')
@@ -216,8 +220,8 @@ class BaseDatos:
                 aula.nombre = nombre[0].strip()
                 aulas.append(aula)
             return aulas
-        except Exception as e:
-            return e
+        except:
+            return False
         finally:
             if cursor:
                 cursor.close()
@@ -226,19 +230,22 @@ class BaseDatos:
     def autentificar_profesor(id_introducido, clave_introducida):
         cursor = None
         try:
-            cursor = CONEXION.cursor()
+            cursor = conexion.cursor()
             comprobacion = (f'select clave from profesores '
                             f'where id = "{id_introducido}"')
             cursor.execute(comprobacion)
             clave = cursor.fetchone()
             if clave:
                 clave = clave[0]
-                return bcrypt.checkpw(clave_introducida.encode('utf-8'),
+                resultado = bcrypt.checkpw(clave_introducida.encode('utf-8'),
                                       clave.encode('utf-8'))
+                if not resultado:
+                    return ''
+                return resultado
             else:
-                return False
-        except Exception as e:
-            return e
+                return ''
+        except:
+            return False
         finally:
             if cursor:
                 cursor.close()
@@ -247,20 +254,19 @@ class BaseDatos:
     def sacar_prof_por_id(id_prof):
         cursor = None
         try:
-            cursor = CONEXION.cursor()
+            cursor = conexion.cursor()
             selecionar_profe = (f'select nombre, apellidos from profesores '
                                  f'where id = "{id_prof}"')
             cursor.execute(selecionar_profe)
             profesor = cursor.fetchone()
             return profesor
-        except Exception as e:
-            return e
+        except:
+            return False
         finally:
             if cursor:
                 cursor.close()
 
     @staticmethod
-    #todo: esto hay que testearlo????
     def almacenar_guardias(cursor) -> list[Guardia]:
         guardias = []
         for guardia in cursor:
@@ -277,10 +283,11 @@ class BaseDatos:
 
     @staticmethod
     def seleccionar_guardias_por_fechas(fecha_inicio, fecha_fin) -> list[
-        Guardia]:
+        Guardia]|bool:
         cursor = None
+        guardias = []
         try:
-            cursor = CONEXION.cursor()
+            cursor = conexion.cursor()
             seleccion_guardias = (
                 'select nombre, apellidos, dia, hora, curso, aula, tarea, ficheros '
                 'from guardias natural join profesores '
@@ -289,8 +296,8 @@ class BaseDatos:
             cursor.execute(seleccion_guardias, (fecha_inicio, fecha_fin))
             guardias = BaseDatos.almacenar_guardias(cursor)
             return guardias
-        except Exception as e:
-            return e
+        except:
+            return False
         finally:
             if cursor:
                 cursor.close()
@@ -299,7 +306,7 @@ class BaseDatos:
     def sacar_las_guardias_existentes():
         cursor = None
         try:
-            cursor = CONEXION.cursor()
+            cursor = conexion.cursor()
             seleccion_guardias = (
                 'select nombre, apellidos, dia, hora, curso, aula, tarea, ficheros '
                 'from guardias natural join profesores '
@@ -307,8 +314,8 @@ class BaseDatos:
             cursor.execute(seleccion_guardias)
             guardias = BaseDatos.almacenar_guardias(cursor)
             return guardias
-        except Exception as e:
-            return e
+        except:
+            return False
         finally:
             if cursor:
                 cursor.close()
@@ -317,7 +324,7 @@ class BaseDatos:
     def sacar_guardias_profesor(id_prof):
         cursor = None
         try:
-            cursor = CONEXION.cursor()
+            cursor = conexion.cursor()
             seleccion_guardias = (
                 f'select nombre, apellidos, dia, hora, curso, aula, tarea, '
                 f'ficheros from guardias natural join profesores '
@@ -327,8 +334,8 @@ class BaseDatos:
             guardias = BaseDatos.almacenar_guardias(cursor)
             cursor.close()
             return guardias
-        except Exception as e:
-            return e
+        except:
+            return False
         finally:
             if cursor:
                 cursor.close()

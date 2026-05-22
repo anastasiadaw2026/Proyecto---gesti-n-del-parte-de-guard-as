@@ -1,11 +1,11 @@
 import unittest
-from claves.conexion_bbdd import CONEXION
+from claves.conexion_bbdd import conexion
 from recursos_externos.bbdd.base_datos import BaseDatos
 
 
 class TestSacarProfPorId(unittest.TestCase):
     def test_profesor_existente(self):
-        conexion = CONEXION
+        conexion = conexion
         conexion.autocommit = False
 
         try:
@@ -25,7 +25,7 @@ class TestSacarProfPorId(unittest.TestCase):
             conexion.autocommit = True
 
     def test_profesor_inexistente(self):
-        conexion = CONEXION
+        conexion = conexion
         profesor = BaseDatos.sacar_prof_por_id('prof_inexistente')
         self.assertIsNone(profesor)
 

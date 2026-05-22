@@ -10,7 +10,6 @@ from claves import claves_admin as ad
 
 class App:
     FINES_SEMANA = (5, 6)
-    NUM_DIAS_SEMANA = 7
     fin = False
     SEPARADOR = Colores.ROSA + '·' * 16 + Colores.RESET
 
@@ -22,35 +21,78 @@ class App:
             print(App.SEPARADOR)
             match opcion_elegida.strip():
                 case Menus.ConstantesMenu.UNO:
-                    print(f'Para registrarte y poder acceder a los '
-                          f'derechos de Administrador introduce el id y la clave.')
-                    id_admin = input('ID: ').strip()
-                    clave_admin = input('CLAVE: ').strip()
-                    if (Administrador(ad.ID, ad.CLAVE) ==
-                            Administrador(id_admin, clave_admin)):
-                        print('Autentificación correcta.')
-                        print(App.SEPARADOR)
-                        self.gestionar_opciones_admin()
-                    else:
-                        self.gestionar_fallo_autentificacion()
+                    self.login_admin()
                 case Menus.ConstantesMenu.DOS:
-                    print(App.SEPARADOR)
-                    print('Para registrarte y poder acceder a los derechos de '
-                          'Profesor introduce el id y la clave.')
-                    id_prof = input('ID: ')
-                    clave_prof = input('CLAVE: ')
-                    if BaseDatos.autentificar_profesor(id_prof,
-                                                               clave_prof):
-                        print('Autentificación correcta.')
-                        self.gestionar_opciones_profesor(id_prof)
-                    else:
-                        self.gestionar_fallo_autentificacion()
+                    self.login_profesor()
                 case Menus.ConstantesMenu.TRES:
                     self.gestionar_lector()
                 case Menus.ConstantesMenu.CUATRO:
                     self.salir()
                 case _:
                     self.gestionar_entrada_incorrecta(self.main)
+
+    def login_admin(self):
+        print(f'Para registrarte y poder acceder a los '
+              f'derechos de Administrador introduce el id y la clave.')
+        id_admin = input('ID: ').strip()
+        clave_admin = input('CLAVE: ').strip()
+        if (Administrador(ad.ID, ad.CLAVE) ==
+                Administrador(id_admin, clave_admin)):
+            print('Autentificación correcta.')
+            print(App.SEPARADOR)
+            self.gestionar_opciones_admin()
+        else:
+            self.gestionar_fallo_autentificacion()
+
+    def login_profesor(self):
+        print(App.SEPARADOR)
+        print('Para registrarte y poder acceder a los derechos de '
+              'Profesor introduce el id y la clave.')
+        id_prof = input('ID: ')
+        clave_prof = input('CLAVE: ')
+        if BaseDatos.autentificar_profesor(id_prof, clave_prof):
+            print('Autentificación correcta.')
+            self.gestionar_opciones_profesor(id_prof)
+        elif BaseDatos.autentificar_profesor(id_prof, clave_prof) == '':
+            self.gestionar_fallo_autentificacion()
+        else:
+            self.gestionar_error_bbdd()
+
+    def gestionar_opciones_admin(self):
+        print(App.SEPARADOR)
+        Menus.imprimir_menu_inicial_admin()
+        opcion = input(': ')
+        print(App.SEPARADOR)
+        match opcion.strip().lower():
+            case Menus.ConstantesMenu.UNO:
+                self.gestionar_backup()
+                if BaseDatos.vaciar_bbdd():
+                    print('La base de datos se vació correctamente.')
+                    if BaseDatos.cargar_tablas():
+                        print('Las tablas han sido rellenadas correctamente.')
+                        print(BaseDatos.guardar_claves_profesores())
+                        self.acabar_operacion()
+                    else:
+                        print('Las tablas no se han rellenado.')
+                        self.gestionar_error_bbdd()
+                else:
+                    print('La base de datos no se ha podido vaciar.')
+                    self.gestionar_error_bbdd()
+            case Menus.ConstantesMenu.DOS:
+                self.visualizar_parte_guardias()
+            case Menus.ConstantesMenu.TRES:
+                self.dar_de_baja_guardia()
+            case Menus.ConstantesMenu.CUATRO:
+                self.dar_de_alta_guardia()
+            case Menus.ConstantesMenu.CINCO:
+                self.generar_informe()
+            case Menus.ConstantesMenu.SEIS:
+                self.sacar_listado_profes()
+            case Menus.ConstantesMenu.SIETE:
+                self.salir()
+            case _:
+                self.gestionar_entrada_incorrecta(
+                    self.gestionar_opciones_admin)
 
     def gestionar_opciones_profesor(self, id_prof):
         print(App.SEPARADOR)
@@ -62,7 +104,6 @@ class App:
                 self.visualizar_parte_guardias()
             case Menus.ConstantesMenu.DOS:
                 self.dar_de_baja_guardia(id_prof)
-                self.acabar_operacion()
             case Menus.ConstantesMenu.TRES:
                 self.dar_de_alta_guardia(id_prof)
             case Menus.ConstantesMenu.CUATRO:
@@ -71,82 +112,9 @@ class App:
                 self.gestionar_entrada_incorrecta(
                     self.gestionar_opciones_profesor, id_prof)
 
-    def gestionar_opciones_admin(self):
-        print(App.SEPARADOR)
-        Menus.imprimir_menu_inicial_admin()
-        opcion = input(': ')
-        print(App.SEPARADOR)
-        match opcion.strip().lower():
-            case Menus.ConstantesMenu.UNO:
-                self.gestionar_backup()
-                BaseDatos.vaciar_bbdd()
-                BaseDatos.cargar_tablas()
-                BaseDatos.guardar_claves_profesores()
-                self.acabar_operacion()
-            case Menus.ConstantesMenu.DOS:
-                self.visualizar_parte_guardias()
-            case Menus.ConstantesMenu.TRES:
-                self.dar_de_baja_guardia()
-                self.acabar_operacion()
-            case Menus.ConstantesMenu.CUATRO:
-                self.dar_de_alta_guardia()
-                self.acabar_operacion()
-            case Menus.ConstantesMenu.CINCO:
-                self.generar_informe()
-            case Menus.ConstantesMenu.SEIS:
-                contador = 1
-                profesores = BaseDatos.sacar_profesores()
-                print(f'Profesores registrados en el sistema:\n'
-                      f'{Colores.ROJO}{"ID".ljust(40)}NOMBRE/APELLIDO'
-                      f'S{Colores.RESET}')
-                for profesor in profesores:
-                    print(contador, end='. ')
-                    profesor.imprimir_id_nombre_apellidos()
-                    contador += 1
-                self.acabar_operacion()
-            case Menus.ConstantesMenu.SIETE:
-                self.salir()
-            case _:
-                self.gestionar_entrada_incorrecta(
-                    self.gestionar_opciones_admin)
-
-    def generar_informe(self):
-        print('Para ver el informe de la guardias debes introducir '
-              'la fecha de inicio y la fecha final.\n'
-              'Para la FECHA DE INICIO:')
-        fecha_inicio = self.generar_fecha()
-        print('Para la FECHA FINAL:')
-        fecha_final = self.generar_fecha()
-        if fecha_inicio < fecha_final:
-            guardias = BaseDatos.seleccionar_guardias_por_fechas(
-                fecha_inicio, fecha_final)
-            for guardia in guardias:
-                print(guardia)
-        else:
-            print(f'La fecha final es menor que la fecha de inicio, '
-                  f'si desea intercambiarlas automáticamente pulse '
-                  f'{Menus.ConstantesMenu.SEGUIR}.'
-                  f'Si quiere introducir las fechas de nuevo pulse '
-                  f'{Menus.ConstantesMenu.ACABAR} y para  salir pulse '
-                  f'cualquier otra tecla.')
-            opcion = input(': ')
-            if opcion.upper().strip() == Menus.ConstantesMenu.SEGUIR:
-                guardias = BaseDatos.seleccionar_guardias_por_fechas(
-                    fecha_final, fecha_inicio)
-                for guardia in guardias:
-                    print(guardia)
-            elif opcion.upper().strip() == Menus.ConstantesMenu.ACABAR:
-                self.generar_informe()
-            else:
-                self.salir()
-
     def gestionar_backup(self):
         print(App.SEPARADOR)
-        print(f'Antes de cargar una nueva base de datos, desea hacer '
-              f'la copia de seguridad de la base de datos en su '
-              f'estado actual. Si quiere generar el backup pulse '
-              f'{Menus.ConstantesMenu.SEGUIR}, si no pulse '
-              f'{Menus.ConstantesMenu.ACABAR}')
+        Menus.imprimir_menu_backup()
         opcion = input(': ')
         print(App.SEPARADOR)
         match opcion.upper().strip():
@@ -154,13 +122,26 @@ class App:
                 resultados = BaseDatos.hacer_backup()
                 self.comprobar_resultado_backup(resultados)
             case Menus.ConstantesMenu.ACABAR:
-                print(f'Si esta seguro introduzca {Menus.ConstantesMenu.SEGUIR}. '
+                print(f'Si está seguro introduzca'
+                      f' {Menus.ConstantesMenu.SEGUIR}. '
                       f'Si introduce otro carácter volverá al inicio.')
                 opcion = input(': ')
                 if opcion.upper().strip() != Menus.ConstantesMenu.SEGUIR:
                     self.gestionar_backup()
             case _:
                 self.gestionar_entrada_incorrecta(self.gestionar_backup)
+
+    def gestionar_lector(self):
+        print(App.SEPARADOR)
+        Menus.imprimir_menu_lector_inicio()
+        opcion_elegida = input(': ')
+        match opcion_elegida.strip():
+            case '1':
+                self.visualizar_parte_guardias()
+            case '2':
+                self.salir()
+            case _:
+                self.gestionar_entrada_incorrecta(self.gestionar_lector)
 
     def comprobar_resultado_backup(self, resultados: tuple[bool, str]):
         print(App.SEPARADOR)
@@ -182,34 +163,106 @@ class App:
                 self.gestionar_entrada_incorrecta(
                     self.comprobar_resultado_backup, resultados)
 
+    def visualizar_parte_guardias(self):
+        fecha_inicio = date.today()
+        fecha_fin = date.today() + timedelta(days = 7)
+        guardias = BaseDatos.seleccionar_guardias_por_fechas(
+                                       fecha_inicio, fecha_fin)
+        if guardias or guardias == []:
+            print(App.SEPARADOR)
+            print('Las guardias de esta semana:')
+            self.imprimir_guardias(guardias)
+            if self.cambiar_semana():
+                self.acabar_operacion()
+        else:
+            self.gestionar_error_bbdd()
+
+    def cambiar_semana(self):
+        print(App.SEPARADOR)
+        Menus.imprimir_elegir_semana()
+        opcion = input(': ')
+        print(App.SEPARADOR)
+        match opcion.strip().upper():
+            case Menus.ConstantesMenu.SEGUIR:
+                print(App.SEPARADOR)
+                Menus.imprimir_menu_cambiar_semana()
+                fecha_inicio = self.generar_fecha()
+                fecha_fin = fecha_inicio + timedelta(days =
+                                                     int(Menus.ConstantesMenu.SIETE))
+                guardias = BaseDatos.seleccionar_guardias_por_fechas(
+                                                   fecha_inicio, fecha_fin)
+                if guardias or guardias == []:
+                    print(App.SEPARADOR)
+                    self.imprimir_guardias(guardias)
+                    return True
+                else:
+                    return self.gestionar_error_bbdd()
+            case Menus.ConstantesMenu.ACABAR:
+                return self.salir()
+            case _:
+               return self.gestionar_entrada_incorrecta(self.cambiar_semana)
+
+    def dar_de_baja_guardia(self, *args):
+        print(App.SEPARADOR)
+        print("Introduce el número de la guardia que quieres dar de baja:")
+        if not args:
+            guardia = self.elegir_objeto_de_lista(BaseDatos.sacar_las_guardias_existentes())
+        else:
+            guardia = self.elegir_objeto_de_lista(
+                BaseDatos.sacar_guardias_profesor(args))
+        if guardia:
+            if guardia.borrar_guardia():
+                print('La guardía se borró correctamente.')
+            else:
+                print('La guardía no se pudo borrar.\n'
+                      'Desde el menú de inicio podrá intentarlo de nuevo.')
+        else:
+            return
+        self.acabar_operacion()
+
     def dar_de_alta_guardia(self, *args):
         guardia = Guardia()
         if args:
             profesor = BaseDatos.sacar_prof_por_id(*args)
-            guardia.id = Profesor(profesor[0], profesor[1])
+            if profesor:
+                guardia.id = Profesor(profesor[0], profesor[1])
+            else:
+                return self.gestionar_error_bbdd()
         else:
             print(App.SEPARADOR)
             print('Elige el profesor al quien se le designará la guardia. '
                   'Introduce el número correspondiente.')
             profesor = self.elegir_objeto_de_lista(
                 BaseDatos.sacar_profesores())
-            guardia.id = profesor
+            if profesor:
+                guardia.id = profesor
+            else:
+                return profesor
         print(App.SEPARADOR)
         print('Ahora elige la fecha de la guardia.')
         fecha = self.generar_fecha()
         guardia.dia = fecha
         print(App.SEPARADOR)
-        print('Ahora elige la hora en la que se realizará la guardía.')
+        print('Ahora elige la hora en la que se realizará la guardia.')
         hora = self.elegir_objeto_de_lista(BaseDatos.sacar_horas())
-        guardia.hora = hora
+        if hora:
+            guardia.hora = hora
+        else:
+            return profesor
         print(App.SEPARADOR)
         print('A continuación elige el curso.')
         curso = self.elegir_objeto_de_lista(BaseDatos.sacar_cursos())
-        guardia.curso = curso
+        if curso:
+            guardia.curso = curso
+        else:
+            return profesor
         print(App.SEPARADOR)
         print('Además, elige el aula.')
         aula = self.elegir_objeto_de_lista(BaseDatos.sacar_aulas())
-        guardia.clase = aula
+        if aula:
+            guardia.clase = aula
+        else:
+            return profesor
         print(App.SEPARADOR)
         print(f'Si hay tarea introduce {Menus.ConstantesMenu.SEGUIR}, '
               f'si no introduce cualquier otra letra o dígito.')
@@ -225,24 +278,72 @@ class App:
         print(App.SEPARADOR)
         print(guardia)
         print(App.SEPARADOR)
-        guardia.insertar_guardia()
-
-    def dar_de_baja_guardia(self, *args):
-        print(App.SEPARADOR)
-        print("Introduce el número de la guardia que quieres dar de baja:")
-        if not args:
-            guardia = self.elegir_objeto_de_lista(BaseDatos.sacar_las_guardias_existentes())
+        if guardia.insertar_guardia():
+            print('Insercción ejecutada correctamente.')
+            self.acabar_operacion()
         else:
-            guardia = self.elegir_objeto_de_lista(
-                BaseDatos.sacar_guardias_profesor(args))
-        guardia.borrar_guardia()
+            self.gestionar_error_bbdd()
+
+    def generar_informe(self):
+        print('Para ver el informe de las guardias debes introducir '
+              'la fecha de inicio y la fecha final.\n'
+              'Para la FECHA DE INICIO:')
+        fecha_inicio = self.generar_fecha()
+        print('Para la FECHA FINAL:')
+        fecha_final = self.generar_fecha()
+        if fecha_inicio < fecha_final:
+            guardias = BaseDatos.seleccionar_guardias_por_fechas(
+                fecha_inicio, fecha_final)
+            if guardias or guardias != []:
+                self.imprimir_guardias(guardias)
+                self.acabar_operacion()
+            else:
+                self.gestionar_error_bbdd()
+        else:
+            print(f'La fecha final es menor que la fecha de inicio, '
+                  f'si desea intercambiarlas automáticamente pulse '
+                  f'{Menus.ConstantesMenu.SEGUIR}.'
+                  f'Si quiere introducir las fechas de nuevo pulse '
+                  f'{Menus.ConstantesMenu.ACABAR} y para  salir pulse '
+                  f'cualquier otra tecla.')
+            opcion = input(': ')
+            if opcion.upper().strip() == Menus.ConstantesMenu.SEGUIR:
+                guardias = BaseDatos.seleccionar_guardias_por_fechas(
+                    fecha_final, fecha_inicio)
+                if guardias or guardias != []:
+                    self.imprimir_guardias(guardias)
+                    self.acabar_operacion()
+                else:
+                    self.gestionar_error_bbdd()
+            elif opcion.upper().strip() == Menus.ConstantesMenu.ACABAR:
+                self.generar_informe()
+            else:
+                self.salir()
+
+    def sacar_listado_profes(self):
+        contador = 1
+        profesores = BaseDatos.sacar_profesores()
+        if profesores and profesores != []:
+            print(f'Profesores registrados en el sistema:\n'
+                  f'{Colores.ROJO}{"ID".ljust(40)}NOMBRE/APELLIDO'
+                  f'S{Colores.RESET}')
+            for profesor in profesores:
+                print(contador, end='. ')
+                profesor.imprimir_id_nombre_apellidos()
+                contador += 1
+            self.acabar_operacion()
+        elif profesores == []:
+            print('No se encontraron profesores.')
+            self.acabar_operacion()
+        else:
+            self.gestionar_error_bbdd()
 
     def elegir_objeto_de_lista(self, lista):
-        print(App.SEPARADOR) #todo: ver que hacer si no hay guardias
+        print(App.SEPARADOR)
         if lista:
             for numero, objeto in enumerate(lista):
                 print(str(numero + 1) + f'. {'-' * 10}\n' + str(objeto))
-        else:
+        elif lista == []:
             print('No hay opciones disponibles.')
             print(f'Si desea salir de la aplicación pulse '
                   f'{Menus.ConstantesMenu.ACABAR}. Si quiere volver al menu '
@@ -252,85 +353,19 @@ class App:
                 return self.salir()
             elif opcion.upper().strip() == Menus.ConstantesMenu.SEGUIR:
                 return self.main()
+        else:
+            return self.gestionar_error_bbdd()
         try:
             opcion = int(input(': '))
             if 1 <= opcion <= len(lista):
                 guardia_elegida = lista[opcion - 1]
                 return guardia_elegida
             else:
-                self.gestionar_entrada_incorrecta(
+                return self.gestionar_entrada_incorrecta(
                     self.elegir_objeto_de_lista, lista)
         except ValueError:
-            self.gestionar_entrada_incorrecta(self.elegir_objeto_de_lista,
-                                              lista)
-
-    def gestionar_fallo_autentificacion(self):
-        print(App.SEPARADOR)
-        print(f'Usuario y/o contraseña incorrectos. Si quieres intentar de '
-              f'nuevo introduce {Menus.ConstantesMenu.SEGUIR}, si quieres salir '
-              f'introduce {Menus.ConstantesMenu.ACABAR}.')
-        opcion = input(': ')
-        print(App.SEPARADOR)
-        match opcion.strip().upper():
-            case Menus.ConstantesMenu.SEGUIR:
-                return
-            case Menus.ConstantesMenu.ACABAR:
-                self.salir()
-            case _:
-                self.gestionar_entrada_incorrecta(self.gestionar_fallo_autentificacion)
-
-    def gestionar_lector(self):
-        print(App.SEPARADOR)
-        Menus.imprimir_menu_lector_inicio()
-        opcion_elegida = input(': ')
-        match opcion_elegida.strip():
-            case '1':
-                self.visualizar_parte_guardias()
-            case '2':
-                self.salir()
-            case _:
-                self.gestionar_entrada_incorrecta(self.gestionar_lector)
-
-    def visualizar_parte_guardias(self):
-        fecha_inicio = date.today()
-        fecha_fin = date.today() + timedelta(days = 7)
-        guardias = BaseDatos.seleccionar_guardias_por_fechas(
-                                       fecha_inicio, fecha_fin)
-        print(App.SEPARADOR)
-        self.imprimir_guardias(guardias)
-        self.cambiar_semana()
-        self.acabar_operacion()
-
-    def imprimir_guardias(self, guardias: list[Guardia]):
-        if guardias:
-            for guardia in guardias:
-                print(App.SEPARADOR)
-                print(guardia)
-        else:
-            print('No se encontró ninguna guardía para estas fechas.')
-
-    def cambiar_semana(self):
-        print(App.SEPARADOR)
-        Menus.imprimir_elegir_semana()
-        opcion = input(': ')
-        print(App.SEPARADOR)
-        match opcion.strip().upper():
-            case Menus.ConstantesMenu.SEGUIR:
-                print(App.SEPARADOR)
-                print(f'Introduce los datos del día a partir de las cual '
-                      f'quieres visualizar las guardias. Aparecerán los datos '
-                      f'de los siguientes {App.NUM_DIAS_SEMANA} días a '
-                      f'partir de la fecha introducida.')
-                fecha_inicio = self.generar_fecha()
-                fecha_fin = fecha_inicio + timedelta(days = App.NUM_DIAS_SEMANA)
-                guardias = BaseDatos.seleccionar_guardias_por_fechas(
-                                                   fecha_inicio, fecha_fin)
-                print(App.SEPARADOR) #todo
-                self.imprimir_guardias(guardias)
-            case Menus.ConstantesMenu.ACABAR:
-                self.salir()
-            case _:
-               self.gestionar_entrada_incorrecta(self.cambiar_semana)
+            return self.gestionar_entrada_incorrecta(
+                self.elegir_objeto_de_lista,lista)
 
     def generar_fecha(self) -> date:
         try:
@@ -354,6 +389,35 @@ class App:
                     return self.generar_fecha()
         except ValueError:
             return self.gestionar_entrada_incorrecta(self.generar_fecha)
+
+    def gestionar_fallo_autentificacion(self):
+        print(App.SEPARADOR)
+        print(f'Usuario y/o clave incorrectas. Si quieres intentar de '
+              f'nuevo introduce {Menus.ConstantesMenu.SEGUIR}, si quieres salir '
+              f'introduce {Menus.ConstantesMenu.ACABAR}.')
+        opcion = input(': ')
+        print(App.SEPARADOR)
+        match opcion.strip().upper():
+            case Menus.ConstantesMenu.SEGUIR:
+                return
+            case Menus.ConstantesMenu.ACABAR:
+                self.salir()
+            case _:
+                self.gestionar_entrada_incorrecta(self.gestionar_fallo_autentificacion)
+
+    def gestionar_error_bbdd(self):
+        print(f"Ha ocurrido un error relacionado con la Base de Datos.")
+        print(f"Si quiere salir introduzca "
+              f"{Menus.ConstantesMenu.ACABAR}. Si quiere "
+              f"volver al inicio introduzca "
+              f"{Menus.ConstantesMenu.SEGUIR}.")
+        opcion = input(': ')
+        if opcion.upper().strip() == Menus.ConstantesMenu.ACABAR:
+            return App.salir()
+        elif opcion.upper().strip() == Menus.ConstantesMenu.SEGUIR:
+            return False
+        else:
+           return self.gestionar_entrada_incorrecta(self.gestionar_error_bbdd)
 
     def gestionar_entrada_incorrecta(self, funcion, *args):
         print(App.SEPARADOR)
@@ -380,14 +444,23 @@ class App:
             case Menus.ConstantesMenu.ACABAR:
                 self.salir()
             case Menus.ConstantesMenu.SEGUIR:
-                return
+                return None
             case _:
-                self.gestionar_entrada_incorrecta(self.acabar_operacion)
+                return self.gestionar_entrada_incorrecta(self.acabar_operacion)
+
+    @staticmethod
+    def imprimir_guardias(self, guardias: list[Guardia]):
+        if guardias:
+            for guardia in guardias:
+                print(App.SEPARADOR)
+                print(guardia)
+        else:
+            print('No se encontró ninguna guardia para estas fechas.')
 
     @staticmethod
     def salir():
         print(App.SEPARADOR)
-        print('¡Adios!👋')
+        print('¡Adiós!👋')
         print(App.SEPARADOR)
         App.fin = True
         raise SystemExit

@@ -8,3 +8,5 @@ class Colores:
     MAGENTA = "\033[95m"
     CIAN = "\033[36m"
     RESET = "\033[0m"
+
+

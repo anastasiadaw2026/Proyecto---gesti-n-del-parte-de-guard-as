@@ -1,6 +1,6 @@
 import bcrypt
 
-from claves.conexion_bbdd import CONEXION
+from claves.conexion_bbdd import conexion
 
 
 class Profesor:
