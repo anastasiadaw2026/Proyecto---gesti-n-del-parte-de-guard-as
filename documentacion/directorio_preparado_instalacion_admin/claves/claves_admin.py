@@ -1,2 +1,2 @@
-ID = 'A'
-CLAVE = 'l'
+ID = 'ADMINISTRADOR'
+CLAVE = 'localadmin205'

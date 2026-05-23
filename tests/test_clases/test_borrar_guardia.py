@@ -54,3 +54,7 @@ class TestBorrarGuardia(unittest.TestCase):
 
         with self.assertRaises(Exception):
             guardia.borrar_guardia()
+
+
+if __name__ == '__main__':
+    unittest.main()

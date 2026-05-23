@@ -30,8 +30,6 @@ class BaseDatos:
         except:
             return False, 'No se pudo realizar la copia de seguridad.'
 
-    # todo: cuando acabare de hacer los test tengo que crear el truncate
-    #  guardias también
     @staticmethod
     def vaciar_bbdd():
         conexion.autocommit = False
@@ -44,6 +42,7 @@ class BaseDatos:
                       'DELETE FROM aulas',
                       'DELETE FROM cursos',
                       'DELETE FROM horas',
+                      'DELETE FROM GUARDIAS',
                       'SET FOREIGN_KEY_CHECKS = 1']
             for truncate in vaciar:
                 cursor.execute(truncate)
@@ -340,4 +339,3 @@ class BaseDatos:
             if cursor:
                 cursor.close()
 
-BaseDatos.vaciar_bbdd()

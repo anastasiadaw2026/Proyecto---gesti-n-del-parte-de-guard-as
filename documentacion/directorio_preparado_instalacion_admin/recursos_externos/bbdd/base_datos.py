@@ -16,7 +16,7 @@ class BaseDatos:
     def hacer_backup():
         try:
             fecha_hora = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            archivo_backup = f"../backups/backup_{fecha_hora}.sql"
+            archivo_backup = f"backups/backup_{fecha_hora}.sql"
             with open(archivo_backup, "w", encoding="utf-8") as archivo:
                 proceso = subprocess.run(
                     ["docker", "exec", "-e", f"MYSQL_PWD={CONTRASENIA}",
@@ -30,8 +30,7 @@ class BaseDatos:
         except:
             return False, 'No se pudo realizar la copia de seguridad.'
 
-    # todo: cuando acabare de hacer los test tengo que crear el truncate
-    #  guardias también
+
     @staticmethod
     def vaciar_bbdd():
         conexion.autocommit = False
@@ -44,6 +43,7 @@ class BaseDatos:
                       'DELETE FROM aulas',
                       'DELETE FROM cursos',
                       'DELETE FROM horas',
+                      'DELETE FROM GUARDIAS',
                       'SET FOREIGN_KEY_CHECKS = 1']
             for truncate in vaciar:
                 cursor.execute(truncate)
@@ -67,21 +67,21 @@ class BaseDatos:
         cursor = None
         try:
             cursor = conexion.cursor()
-            with open('../recursos_externos/ficheros/cursos.csv', mode='r',
+            with open('recursos_externos/ficheros/cursos.csv', mode='r',
                       encoding='utf-8-sig') as f:
                 for linea in f.readlines():
                     curso, letras = linea.strip().split(',')
                     for letra in letras.strip().split(';'):
                         cursos.append(str(curso + "-" + letra))
-            with open('../recursos_externos/ficheros/aulas.txt', mode='r',
+            with open('recursos_externos/ficheros/aulas.txt', mode='r',
                       encoding='utf-8') as f:
                 for aula in f.readlines():
                     aulas.append(aula.upper().strip())
-            with open('../recursos_externos/ficheros/horas.txt', mode='r',
+            with open('recursos_externos/ficheros/horas.txt', mode='r',
                       encoding='utf-8') as f:
                 for hora in f.readlines():
                     horas.append(hora.strip())
-            with (open('../recursos_externos/ficheros/profesores.csv', 'r',
+            with (open('recursos_externos/ficheros/profesores.csv', 'r',
                        encoding
                   = 'utf-8') as f):
                 for index, line in enumerate(f.readlines()):
@@ -102,7 +102,7 @@ class BaseDatos:
     def guardar_claves_profesores():
         try:
             profesores = BaseDatos.recoger_info_ficheros()[3]
-            with open('../claves/claves_profesores.txt', 'w', encoding =
+            with open('claves/claves_profesores.txt', 'w', encoding =
                         'utf-8') as fclaves:
                 for profesor in profesores:
                     fclaves.write(profesor.id + ' - ' + profesor.clave + '\n')
@@ -282,8 +282,7 @@ class BaseDatos:
         return guardias
 
     @staticmethod
-    def seleccionar_guardias_por_fechas(fecha_inicio, fecha_fin) -> list[
-        Guardia]|bool:
+    def seleccionar_guardias_por_fechas(fecha_inicio, fecha_fin) -> list[Guardia]|bool:
         cursor = None
         guardias = []
         try:
