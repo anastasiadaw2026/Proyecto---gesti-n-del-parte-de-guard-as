@@ -1,3 +1,4 @@
+from claves.conexion_bbdd import conexion
 from colores import Colores
 from recursos_externos.bbdd.base_datos import BaseDatos
 from lib.administrador import Administrador
@@ -462,6 +463,7 @@ class App:
         print(App.SEPARADOR)
         print('¡Adiós!👋')
         print(App.SEPARADOR)
+        conexion.close()
         App.fin = True
         raise SystemExit
 

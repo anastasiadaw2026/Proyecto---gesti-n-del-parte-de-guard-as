@@ -339,5 +339,3 @@ class BaseDatos:
         finally:
             if cursor:
                 cursor.close()
-
-BaseDatos.vaciar_bbdd()
