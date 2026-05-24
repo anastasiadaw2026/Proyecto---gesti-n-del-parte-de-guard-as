@@ -470,6 +470,3 @@ class App:
         conexion.close()
         App.fin = True
         raise SystemExit
-
-
-App().main()

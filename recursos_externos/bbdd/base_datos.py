@@ -49,7 +49,6 @@ class BaseDatos:
             conexion.commit()
             return True
         except:
-            conexion.rollback()
             return False
         finally:
             if cursor:
